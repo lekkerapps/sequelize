@@ -1264,6 +1264,45 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
     });
 
+    it('should map raw attribute to model when field defined', function() {
+      const Log = this.sequelize.define('log', {
+        id: {
+          type: Sequelize.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+          allowNull: false
+        },
+        isActive: {
+          type: Sequelize.BOOLEAN,
+          allowNull: false,
+          defaultValue: true,
+          field: 'is_active'
+        },
+        entryName: {
+          type: Sequelize.STRING,
+          field: 'entry_name'
+        },
+        entryDate: {
+          type: Sequelize.DATE,
+          field: 'entry_date'
+        }
+      });
+
+      return Log.sync({force: true})
+        .then(() => {
+          return Log.create({
+            is_active: false,
+            entry_name: 'Entry1',
+            entry_date: '2017-05-23 17:00:00'
+          });
+        })
+        .then(log => {
+          expect(log.isActive).to.be.false;
+          expect(log.entryName).to.equal('Entry1');
+          expect(log.entryDate.getTime()).to.equal(new Date('2017-05-23 17:00:00').getTime());
+        });
+    });
+
     describe('enums', () => {
       it('correctly restores enum values', function() {
         const self = this,
@@ -1899,6 +1938,36 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         expect(ms[0].id).to.be.eql(1);
         expect(ms[1].id).to.be.eql(2);
       });
+    });
+
+    it('should map raw attribute to model', function() {
+      const Log = this.sequelize.define('Log', {
+        id: {
+          type: Sequelize.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+          allowNull: false
+        },
+        entryName: {
+          type: Sequelize.STRING,
+          field: 'entry_name'
+        }
+      });
+
+      return Log.sync({force: true})
+        .then(() => {
+          return Log.bulkCreate([
+            {entry_name: 'entry1'},
+            {entryName: 'entry2'},
+            {entry_name: 'entry3'}
+          ])
+          .then(logs => {
+            expect(logs).to.have.length(3);
+            expect(logs[0].entryName).to.equal('entry1');
+            expect(logs[1].entryName).to.equal('entry2');
+            expect(logs[2].entryName).to.equal('entry3');
+          });
+        });
     });
   });
 
